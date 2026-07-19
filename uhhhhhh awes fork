@@ -803,8 +803,8 @@ else
 		AnchorPoint = Vector2.new(1, 0.5),
 	}):Play()
 	local scrolltextratio = scrolltext.Size.X.Offset / scrolltext.Size.Y.Offset
-	local Triforce1 = Util.MakeTriforce(3, Color3.new(1, 0, 0), 4)
-	local Triforce2 = Util.MakeTriforce(3, Color3.new(1, 0, 0), 4)
+	local Triforce1 = Util.MakeTriforce(3, Color3.new(1, 0.3, 0.3), 4)
+	local Triforce2 = Util.MakeTriforce(3, Color3.new(1, 0.3, 0.3), 4)
 	Triforce1.ZIndex = 2
 	Triforce2.ZIndex = 1
 	Triforce1.Parent = UIMainFrame
@@ -1572,7 +1572,7 @@ do -- homepage
 	Glowy.ImageTransparency = 0.7
 	Glowy.ZIndex = -2
 
-	local Triforce = Util.MakeTriforce(3, Color3.new(1, 0, 0), 0)
+	local Triforce = Util.MakeTriforce(3, Color3.new(1, 0.3, 0.3), 0)
 	Triforce.AnchorPoint = Vector2.new(0.5, 0.5)
 	Triforce.Position = UDim2.new(0.5, 0, 0.5, 0)
 	Triforce.Size = UDim2.new(0, 160, 0, 160)

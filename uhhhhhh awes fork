@@ -7219,253 +7219,7 @@ do
 		Reanimate.CreateCharacter()
 	end)
 end
-UI.CreateSeparator(MainPage)
-
-do
-	UI.CreateText(MainPage, "Reanimate Character Settings", 15, Enum.TextXAlignment.Center)
-	UI.CreateSwitch(MainPage, "Infinite Jump", Reanimate.InfiniteJump).Changed:Connect(function(val)
-		Reanimate.InfiniteJump = val
-		SaveData.NoInfiniteJump = not val
-	end)
-	UI.CreateSwitch(MainPage, "Noclip", Reanimate.Noclip).Changed:Connect(function(val)
-		Reanimate.Noclip = val
-		SaveData.NoclipEnabled = val
-	end)
-	UI.CreateSwitch(MainPage, "Smooth Camera", Reanimate.SmoothCam).Changed:Connect(function(val)
-		Reanimate.SmoothCam = val
-		SaveData.NoSmoothCam = not val
-	end)
-	UI.CreateSwitch(MainPage, "First Person Body", Reanimate.FirstPersonBody).Changed:Connect(function(val)
-		Reanimate.FirstPersonBody = val
-		SaveData.FirstPersonBody = not val
-	end)
-	UI.CreateSwitch(MainPage, "Allow Shiftlock", Reanimate.ShiftlockEnabled).Changed:Connect(function(val)
-		Reanimate.ShiftlockEnabled = val
-		SaveData.ShiftlockDisabled = not val
-	end)
-	UI.CreateSwitch(MainPage, "Can Sit on Seats", Reanimate.SeatSit).Changed:Connect(function(val)
-		Reanimate.SeatSit = val
-		SaveData.NoSeatSitEnabled = not val
-	end)
-	UI.CreateSwitch(MainPage, "Can Pickup Tools", Reanimate.ToolGrab).Changed:Connect(function(val)
-		Reanimate.ToolGrab = val
-		SaveData.ToolGrabEnabled = val
-	end)
-	UI.CreateSwitch(MainPage, "Apply Scale to Gravity", Reanimate.ScaleGravity).Changed:Connect(function(val)
-		Reanimate.ScaleGravity = val
-		SaveData.ScaleGravityEnabled = val
-	end)
-	UI.CreateSwitch(MainPage, "Void Float", Reanimate.PatchmaVoidFloat).Changed:Connect(function(val)
-		Reanimate.PatchmaVoidFloat = val
-		SaveData.PatchmaVoidFloat = val
-	end)
-	UI.CreateButton(MainPage, "Force Sit (2x to remove gyro)", 20).Activated:Connect(function()
-		local ch = Reanimate.Character or Player.Character
-		if ch then
-			local h = ch:FindFirstChildOfClass("Humanoid")
-			local r = h and h.RootPart
-			if h and r then
-				h.Sit = true
-				if r:FindFirstChild("SeatGyro") then
-					r.SeatGyro:Destroy()
-				else
-					local g = Instance.new("BodyGyro")
-					g.Name = "SeatGyro"
-					g.CFrame = r.CFrame
-					g.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-					g.Parent = r
-					Util.LinkDestroyI2C(g, h:GetPropertyChangedSignal("Sit"):Once(function()
-						g:Destroy()
-					end))
-				end
-			end
-		end
-	end)
-	local CharacterScaleSlider = UI.CreateSlider(MainPage, "Character Scale", Reanimate.CharacterScale, 0.5, 5, 0.5)
-	CharacterScaleSlider.Changed:Connect(function(val)
-		val = math.clamp(val, 0.001, 20)
-		CharacterScaleSlider.Value = val
-		Reanimate.CharacterScale = val
-		SaveData.CharacterScale = val
-	end)
-	local PlaceholderTransparencySlider = UI.CreateSlider(MainPage, "Placeholders", Reanimate.PlaceholderTransparency, 0, 1, 0.05)
-	PlaceholderTransparencySlider.Changed:Connect(function(val)
-		val = math.clamp(val, 0, 1)
-		PlaceholderTransparencySlider.Value = val
-		Reanimate.PlaceholderTransparency = val
-		SaveData.PlaceholderTransparency = val
-	end)
-	UI.CreateSeparator(MainPage)
-	local function ReanimCharacterTeleport(pos)
-		local ch = Reanimate.Character or Player.Character
-		if ch then
-			local h = ch:FindFirstChildOfClass("Humanoid")
-			local r = h and h.RootPart
-			if h and r then
-				r.CFrame = r.CFrame.Rotation + pos
-				r.Velocity = Vector3.zero
-				r.RotVelocity = Vector3.zero
-			end
-		end
-	end
-	UI.CreateSwitch(MainPage, "Click Fling", Reanimate.ClickFling).Changed:Connect(function(val)
-		Reanimate.ClickFling = val
-		SaveData.ClickFlingEnabled = val
-	end)
-	UI.CreateSwitch(MainPage, "Key+Click Teleport", Reanimate.CtrlClick).Changed:Connect(function(val)
-		Reanimate.CtrlClick = val
-		SaveData.CtrlClickEnabled = val
-	end)
-	local selectedkey = Enum.KeyCode.LeftControl
-	SaveData.CtrlClickKey = SaveData.CtrlClickKey or 1
-	local function updatekey()
-		local val = SaveData.CtrlClickKey
-		if val == 1 then
-			selectedkey = Enum.KeyCode.LeftControl
-		end
-		if val == 2 then
-			selectedkey = Enum.KeyCode.RightBracket
-		end
-		if val == 3 then
-			selectedkey = Enum.KeyCode.Tab
-		end
-		if val == 4 then
-			selectedkey = Enum.KeyCode.Z
-		end
-		if val == 5 then
-			selectedkey = Enum.KeyCode.X
-		end
-		if val == 6 then
-			selectedkey = Enum.KeyCode.F
-		end
-		if val == 7 then
-			selectedkey = Enum.KeyCode.T
-		end
-	end
-	updatekey()
-	UI.CreateDropdown(MainPage, "TP Key", {
-		"Left Ctrl (default)", "inno's pick (']')", "Tab (idk)",
-		"Z", "X (i like this one on pc)", "F", "T",
-	}, SaveData.CtrlClickKey).Changed:Connect(function(val)
-		SaveData.CtrlClickKey = val
-		updatekey()
-	end)
-	local Maus = Player:GetMouse()
-	local HoldingCtrl = UI.CreateSwitch(MainPage, "TP Key Held", false)
-	local _lastclick = nil
-	local _lastclickgpe = false
-	local _lastclicktick = 0
-	local _lastclickpos = Vector3.zero
-	UserInputService.InputBegan:Connect(function(input, gpe)
-		if input.UserInputType == Enum.UserInputType.Keyboard then
-			if input.KeyCode == selectedkey then
-				HoldingCtrl.Value = true
-			end
-		end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			_lastclick = input
-			_lastclickgpe = gpe
-			_lastclicktick = os.clock()
-			_lastclickpos = input.Position
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(input, gpe)
-		if input.UserInputType == Enum.UserInputType.Keyboard then
-			if input.KeyCode == selectedkey then
-				HoldingCtrl.Value = false
-			end
-		end
-		if _lastclick and _lastclick == input and not _lastclickgpe then
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or (os.clock() - _lastclicktick < 0.3 and (input.Position - _lastclickpos).Magnitude < 10) then
-				if Reanimate.CtrlClick and HoldingCtrl.Value then
-					if Maus.Target and Maus.Target.Parent then
-						ReanimCharacterTeleport(Maus.Hit.Position + Vector3.new(0, 3, 0))
-						return
-					end
-				end
-				if Reanimate.ClickFling then
-					if Maus.Target and Maus.Target.Parent then 
-						local target = Maus.Target.Parent
-						if target:IsA("Accessory") then
-							target = target.Parent
-						end
-						if target:FindFirstChildOfClass("Humanoid") then
-							if ReanimateFling(target) then return end
-						end
-					end
-				end
-			end
-		end
-	end)
-	UI.CreateButton(MainPage, "Teleport to 0, highest, 0", 20).Activated:Connect(function()
-		local hit = workspace:Raycast(Vector3.new(0, 4500, 0), Vector3.new(0, -4500 + FallenPartsDestroyHeight, 0))
-		if hit and hit.Position == hit.Position then
-			ReanimCharacterTeleport(hit.Position + Vector3.new(0, 5, 0))
-		else
-			ReanimCharacterTeleport(Vector3.new(0, 0, 0))
-		end
-	end)
-	UI.CreateButton(MainPage, "Teleport to 'LastSafe'", 20).Activated:Connect(function()
-		ReanimCharacterTeleport(Vector3.new(0, FallenPartsDestroyHeight - 5000, 0))
-	end)
-	local TeleportToPlayerSel = UI.CreateText(MainPage, "<font color=\"#AAAAAA\">(enter a player name)</font>", 15, Enum.TextXAlignment.Center)
-	local TeleportToPlayer = UI.CreateTextbox(MainPage, "", "Teleport To Player", 20)
-	TeleportToPlayer:GetPropertyChangedSignal("Text"):Connect(function()
-		local sel = Util.QueryPlayerSelector(TeleportToPlayer.Text)
-		if sel then
-			TeleportToPlayerSel.Text = `{sel.DisplayName} (@{sel.Name})`
-		else
-			if #TeleportToPlayer.Text == 0 then
-				TeleportToPlayerSel.Text = "<font color=\"#AAAAAA\">(enter a player name)</font>"
-			else
-				TeleportToPlayerSel.Text = "<font color=\"#FF7777\">(player not found)</font>"
-			end
-		end
-	end)
-	TeleportToPlayer.FocusLost:Connect(function(enter)
-		if enter then
-			local sel = Util.QueryPlayerSelector(TeleportToPlayer.Text)
-			if sel and sel.Character then
-				local r = sel.Character:FindFirstChild("LowerTorso") or sel.Character:FindFirstChild("Torso")
-				if r and r:IsA("BasePart") then
-					ReanimCharacterTeleport(r.CFrame.Position)
-				end
-			end
-			TeleportToPlayer.Text = ""
-		end
-	end)
-end
-UI.CreateSeparator(MainPage)
-do
-	UI.CreateText(MainPage, "Internals Settings", 15, Enum.TextXAlignment.Center)
-	UI.CreateSwitch(MainPage, "Hook LoadAnimation", Reanimate.UseLoadAnimationHook).Changed:Connect(function(val)
-		Reanimate.UseLoadAnimationHook = val
-		SaveData.NoLoadAnimationHook = not val
-	end)
-	if ismissing(hookmetamethod) or ismissing(hookfunction) then
-		UI.CreateText(MainPage, "^ this option will not work for you", 10, Enum.TextXAlignment.Center)
-	end
-	UI.CreateSwitch(MainPage, "Use Physics Glue", Reanimate.UsePhysicsRepRootPart).Changed:Connect(function(val)
-		Reanimate.UsePhysicsRepRootPart = val
-		SaveData.NoPhysicsRepRootPart = not val
-	end)
-	UI.CreateText(MainPage, "internals for physics based reanimation\n(like hat reanimator)", 10, Enum.TextXAlignment.Center)
-	UI.CreateSwitch(MainPage, "Patchma-like Netless", Reanimate.UsePatchmaLikeNetless).Changed:Connect(function(val)
-		Reanimate.UsePatchmaLikeNetless = val
-		SaveData.UsePatchmaLikeNetless = val
-	end)
-	local NetVelSlider = UI.CreateSlider(MainPage, "Netless Velocity", Reanimate.NetlessVelocity, 25.01, 30, 0.1)
-	NetVelSlider.Changed:Connect(function(val)
-		val = math.clamp(val, 25.01, 30)
-		NetVelSlider.Value = val
-		Reanimate.NetlessVelocity = val
-		SaveData.NetlessVelocity = val
-	end)
-	UI.CreateSwitch(MainPage, "Apply RotVelocity", Reanimate.UseAngularVelocity).Changed:Connect(function(val)
-		Reanimate.UseAngularVelocity = val
-		SaveData.UseAngularVelocity = val
-	end)
-end
+UI.CreateText(MainPage, "", 3, Enum.TextXAlignment.Center)
 UI.CreateSeparator(MainPage)
 
 local AnimLib = {}
@@ -7971,6 +7725,7 @@ MovesetsPage.ZIndex = 1
 MovesetsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
 MovesetsPage.Interactable = false
 MovesetsPage.Visible = false
+UI.CreateText(MainPage, "", 3, Enum.TextXAlignment.Center)
 UI.CreateButton(MainPage, "Movesets &gt;", 20).Activated:Connect(function()
 	MovesetsPage.Interactable = false
 	MovesetsPage.Visible = true
@@ -8001,6 +7756,7 @@ DancesPage.ZIndex = 1
 DancesPage.Position = UDim2.new(0.5, 360, 0.5, 0)
 DancesPage.Interactable = false
 DancesPage.Visible = false
+
 UI.CreateButton(MainPage, "Dances &gt;", 20).Activated:Connect(function()
 	DancesPage.Interactable = false
 	DancesPage.Visible = true
@@ -8317,6 +8073,254 @@ do
 		local pos = jumpButton.AbsolutePosition - SCREENGUI.AbsolutePosition
 		buttonsui.Visible = true
 		buttonsui.Position = UDim2.fromOffset(pos.X - 35, pos.Y - 35)
+	end)
+end
+UI.CreateText(MainPage, "", 3, Enum.TextXAlignment.Center)
+UI.CreateSeparator(MainPage)
+do
+	UI.CreateText(MainPage, "Internals Settings", 15, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(MainPage, "Hook LoadAnimation", Reanimate.UseLoadAnimationHook).Changed:Connect(function(val)
+		Reanimate.UseLoadAnimationHook = val
+		SaveData.NoLoadAnimationHook = not val
+	end)
+	if ismissing(hookmetamethod) or ismissing(hookfunction) then
+		UI.CreateText(MainPage, "^ this option will not work for you", 10, Enum.TextXAlignment.Center)
+	end
+	UI.CreateSwitch(MainPage, "Use Physics Glue", Reanimate.UsePhysicsRepRootPart).Changed:Connect(function(val)
+		Reanimate.UsePhysicsRepRootPart = val
+		SaveData.NoPhysicsRepRootPart = not val
+	end)
+	UI.CreateText(MainPage, "internals for physics based reanimation\n(like hat reanimator)", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(MainPage, "Patchma-like Netless", Reanimate.UsePatchmaLikeNetless).Changed:Connect(function(val)
+		Reanimate.UsePatchmaLikeNetless = val
+		SaveData.UsePatchmaLikeNetless = val
+	end)
+	local NetVelSlider = UI.CreateSlider(MainPage, "Netless Velocity", Reanimate.NetlessVelocity, 25.01, 30, 0.1)
+	NetVelSlider.Changed:Connect(function(val)
+		val = math.clamp(val, 25.01, 30)
+		NetVelSlider.Value = val
+		Reanimate.NetlessVelocity = val
+		SaveData.NetlessVelocity = val
+	end)
+	UI.CreateSwitch(MainPage, "Apply RotVelocity", Reanimate.UseAngularVelocity).Changed:Connect(function(val)
+		Reanimate.UseAngularVelocity = val
+		SaveData.UseAngularVelocity = val
+	end)
+end
+UI.CreateText(MainPage, "",3, Enum.TextXAlignment.Center)
+UI.CreateSeparator(MainPage)
+do
+	UI.CreateText(MainPage, "Reanimate Character Settings", 15, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(MainPage, "Infinite Jump", Reanimate.InfiniteJump).Changed:Connect(function(val)
+		Reanimate.InfiniteJump = val
+		SaveData.NoInfiniteJump = not val
+	end)
+	UI.CreateSwitch(MainPage, "Noclip", Reanimate.Noclip).Changed:Connect(function(val)
+		Reanimate.Noclip = val
+		SaveData.NoclipEnabled = val
+	end)
+	UI.CreateSwitch(MainPage, "Smooth Camera", Reanimate.SmoothCam).Changed:Connect(function(val)
+		Reanimate.SmoothCam = val
+		SaveData.NoSmoothCam = not val
+	end)
+	UI.CreateSwitch(MainPage, "First Person Body", Reanimate.FirstPersonBody).Changed:Connect(function(val)
+		Reanimate.FirstPersonBody = val
+		SaveData.FirstPersonBody = not val
+	end)
+	UI.CreateSwitch(MainPage, "Allow Shiftlock", Reanimate.ShiftlockEnabled).Changed:Connect(function(val)
+		Reanimate.ShiftlockEnabled = val
+		SaveData.ShiftlockDisabled = not val
+	end)
+	UI.CreateSwitch(MainPage, "Can Sit on Seats", Reanimate.SeatSit).Changed:Connect(function(val)
+		Reanimate.SeatSit = val
+		SaveData.NoSeatSitEnabled = not val
+	end)
+	UI.CreateSwitch(MainPage, "Can Pickup Tools", Reanimate.ToolGrab).Changed:Connect(function(val)
+		Reanimate.ToolGrab = val
+		SaveData.ToolGrabEnabled = val
+	end)
+	UI.CreateSwitch(MainPage, "Apply Scale to Gravity", Reanimate.ScaleGravity).Changed:Connect(function(val)
+		Reanimate.ScaleGravity = val
+		SaveData.ScaleGravityEnabled = val
+	end)
+	UI.CreateSwitch(MainPage, "Void Float", Reanimate.PatchmaVoidFloat).Changed:Connect(function(val)
+		Reanimate.PatchmaVoidFloat = val
+		SaveData.PatchmaVoidFloat = val
+	end)
+	UI.CreateButton(MainPage, "Force Sit (2x to remove gyro)", 20).Activated:Connect(function()
+		local ch = Reanimate.Character or Player.Character
+		if ch then
+			local h = ch:FindFirstChildOfClass("Humanoid")
+			local r = h and h.RootPart
+			if h and r then
+				h.Sit = true
+				if r:FindFirstChild("SeatGyro") then
+					r.SeatGyro:Destroy()
+				else
+					local g = Instance.new("BodyGyro")
+					g.Name = "SeatGyro"
+					g.CFrame = r.CFrame
+					g.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+					g.Parent = r
+					Util.LinkDestroyI2C(g, h:GetPropertyChangedSignal("Sit"):Once(function()
+						g:Destroy()
+					end))
+				end
+			end
+		end
+	end)
+	local CharacterScaleSlider = UI.CreateSlider(MainPage, "Character Scale", Reanimate.CharacterScale, 0.5, 5, 0.5)
+	CharacterScaleSlider.Changed:Connect(function(val)
+		val = math.clamp(val, 0.001, 20)
+		CharacterScaleSlider.Value = val
+		Reanimate.CharacterScale = val
+		SaveData.CharacterScale = val
+	end)
+	local PlaceholderTransparencySlider = UI.CreateSlider(MainPage, "Placeholders", Reanimate.PlaceholderTransparency, 0, 1, 0.05)
+	PlaceholderTransparencySlider.Changed:Connect(function(val)
+		val = math.clamp(val, 0, 1)
+		PlaceholderTransparencySlider.Value = val
+		Reanimate.PlaceholderTransparency = val
+		SaveData.PlaceholderTransparency = val
+	end)
+	UI.CreateSeparator(MainPage)
+	local function ReanimCharacterTeleport(pos)
+		local ch = Reanimate.Character or Player.Character
+		if ch then
+			local h = ch:FindFirstChildOfClass("Humanoid")
+			local r = h and h.RootPart
+			if h and r then
+				r.CFrame = r.CFrame.Rotation + pos
+				r.Velocity = Vector3.zero
+				r.RotVelocity = Vector3.zero
+			end
+		end
+	end
+	UI.CreateSwitch(MainPage, "Click Fling", Reanimate.ClickFling).Changed:Connect(function(val)
+		Reanimate.ClickFling = val
+		SaveData.ClickFlingEnabled = val
+	end)
+	UI.CreateSwitch(MainPage, "Key+Click Teleport", Reanimate.CtrlClick).Changed:Connect(function(val)
+		Reanimate.CtrlClick = val
+		SaveData.CtrlClickEnabled = val
+	end)
+	local selectedkey = Enum.KeyCode.LeftControl
+	SaveData.CtrlClickKey = SaveData.CtrlClickKey or 1
+	local function updatekey()
+		local val = SaveData.CtrlClickKey
+		if val == 1 then
+			selectedkey = Enum.KeyCode.LeftControl
+		end
+		if val == 2 then
+			selectedkey = Enum.KeyCode.RightBracket
+		end
+		if val == 3 then
+			selectedkey = Enum.KeyCode.Tab
+		end
+		if val == 4 then
+			selectedkey = Enum.KeyCode.Z
+		end
+		if val == 5 then
+			selectedkey = Enum.KeyCode.X
+		end
+		if val == 6 then
+			selectedkey = Enum.KeyCode.F
+		end
+		if val == 7 then
+			selectedkey = Enum.KeyCode.T
+		end
+	end
+	updatekey()
+	UI.CreateDropdown(MainPage, "TP Key", {
+		"Left Ctrl (default)", "inno's pick (']')", "Tab (idk)",
+		"Z", "X (i like this one on pc)", "F", "T",
+	}, SaveData.CtrlClickKey).Changed:Connect(function(val)
+		SaveData.CtrlClickKey = val
+		updatekey()
+	end)
+	local Maus = Player:GetMouse()
+	local HoldingCtrl = UI.CreateSwitch(MainPage, "TP Key Held", false)
+	local _lastclick = nil
+	local _lastclickgpe = false
+	local _lastclicktick = 0
+	local _lastclickpos = Vector3.zero
+	UserInputService.InputBegan:Connect(function(input, gpe)
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			if input.KeyCode == selectedkey then
+				HoldingCtrl.Value = true
+			end
+		end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			_lastclick = input
+			_lastclickgpe = gpe
+			_lastclicktick = os.clock()
+			_lastclickpos = input.Position
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input, gpe)
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			if input.KeyCode == selectedkey then
+				HoldingCtrl.Value = false
+			end
+		end
+		if _lastclick and _lastclick == input and not _lastclickgpe then
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or (os.clock() - _lastclicktick < 0.3 and (input.Position - _lastclickpos).Magnitude < 10) then
+				if Reanimate.CtrlClick and HoldingCtrl.Value then
+					if Maus.Target and Maus.Target.Parent then
+						ReanimCharacterTeleport(Maus.Hit.Position + Vector3.new(0, 3, 0))
+						return
+					end
+				end
+				if Reanimate.ClickFling then
+					if Maus.Target and Maus.Target.Parent then 
+						local target = Maus.Target.Parent
+						if target:IsA("Accessory") then
+							target = target.Parent
+						end
+						if target:FindFirstChildOfClass("Humanoid") then
+							if ReanimateFling(target) then return end
+						end
+					end
+				end
+			end
+		end
+	end)
+	UI.CreateButton(MainPage, "Teleport to 0, highest, 0", 20).Activated:Connect(function()
+		local hit = workspace:Raycast(Vector3.new(0, 4500, 0), Vector3.new(0, -4500 + FallenPartsDestroyHeight, 0))
+		if hit and hit.Position == hit.Position then
+			ReanimCharacterTeleport(hit.Position + Vector3.new(0, 5, 0))
+		else
+			ReanimCharacterTeleport(Vector3.new(0, 0, 0))
+		end
+	end)
+	UI.CreateButton(MainPage, "Teleport to 'LastSafe'", 20).Activated:Connect(function()
+		ReanimCharacterTeleport(Vector3.new(0, FallenPartsDestroyHeight - 5000, 0))
+	end)
+	local TeleportToPlayerSel = UI.CreateText(MainPage, "<font color=\"#AAAAAA\">(enter a player name)</font>", 15, Enum.TextXAlignment.Center)
+	local TeleportToPlayer = UI.CreateTextbox(MainPage, "", "Teleport To Player", 20)
+	TeleportToPlayer:GetPropertyChangedSignal("Text"):Connect(function()
+		local sel = Util.QueryPlayerSelector(TeleportToPlayer.Text)
+		if sel then
+			TeleportToPlayerSel.Text = `{sel.DisplayName} (@{sel.Name})`
+		else
+			if #TeleportToPlayer.Text == 0 then
+				TeleportToPlayerSel.Text = "<font color=\"#AAAAAA\">(enter a player name)</font>"
+			else
+				TeleportToPlayerSel.Text = "<font color=\"#FF7777\">(player not found)</font>"
+			end
+		end
+	end)
+	TeleportToPlayer.FocusLost:Connect(function(enter)
+		if enter then
+			local sel = Util.QueryPlayerSelector(TeleportToPlayer.Text)
+			if sel and sel.Character then
+				local r = sel.Character:FindFirstChild("LowerTorso") or sel.Character:FindFirstChild("Torso")
+				if r and r:IsA("BasePart") then
+					ReanimCharacterTeleport(r.CFrame.Position)
+				end
+			end
+			TeleportToPlayer.Text = ""
+		end
 	end)
 end
 UserInputService.InputBegan:Connect(function(input, gpe)

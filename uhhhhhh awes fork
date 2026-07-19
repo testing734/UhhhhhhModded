@@ -3189,7 +3189,7 @@ end)
 
 local function CreateHumanoidCharacter()
 	local char = Util.Instance("Model")
-	char.Name = "(C) Uhhhhhh V" .. UhhhhhhVersion
+	char.Name = "(C) Uhhhhhh modded V" .. UhhhhhhVersion
 
 	local god = Util.Instance("ForceField", char)
 	god.Name = "heyy!! :33"
@@ -8012,6 +8012,11 @@ UI.CreateButton(MainPage, "Dances &gt;", 20).Activated:Connect(function()
 	tween.Completed:Connect(function()
 		DancesPage.Interactable = true
 	end)
+end)
+UI.CreateButton(MainPage, "Play a Random Dance", 20).Activated:Connect(function()
+	if #DanceableDances ~= 0 then
+		CurrentDance = DanceableDances[math.random(1, #DanceableDances)]
+	end
 end)
 DancesPage.Back.Activated:Connect(function()
 	DancesPage.Interactable = false

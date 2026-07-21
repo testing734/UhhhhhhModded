@@ -2,3 +2,5 @@
 - Tool kill (Yes not tool fling)
 - Avast check disabled (so no startup lag)
 - UI accessibility changed
+- UI CHANGE
+- and custom kill module

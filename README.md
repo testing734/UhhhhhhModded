@@ -4,3 +4,4 @@
 - UI accessibility changed
 - UI CHANGE
 - and custom kill module
+- you can now put folders containing the assets for your modules and the module itself in the Modules folder

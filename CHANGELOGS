@@ -5,6 +5,7 @@
  - Added "Play a Random Dance" which is self explanatory
  - UI CHANGE ( may bug ) (x2)
  - ADDED KILL MODULE ( check AdministrativeModules and kill method )
+ - ADDED Folder module loading ( Added support for folder-based user modules. Place your module script and any accompanying assets in a single folder inside Modules, and they will be processed automatically. *i used ai in writing this to make it less confusing* )
 # Version 1.0.9 BETA
  - Prepare for overhaul...
  - Fixed placeholders having special effects despite not being used.

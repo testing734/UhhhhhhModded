@@ -2,10 +2,8 @@
 
 # Changes
 > - Added Better User module loading `[1/2]` allows loading user modules and its assets by pasting the modules and its asset on a single folder and pasting that folder on the `Modules` without going with the hustle of pasting them manually in `Content/` for Simplicity 
-> 
-> - `UhhhhhhReanim/Modules/YourFolder/main.lua, music.mp3, dance.anim`
-> -# - this feature is still in the works
-> 
+> -    `UhhhhhhReanim/Modules/YourFolder/main.lua, music.mp3, dance.anim`
+> -    this feature is still in the works
 > - Added toolkill (kills people with tool via firetouchinterest)
 > - Disabled malware checking (no more lag on startup)
 > - Play a Random dance button
@@ -26,5 +24,3 @@
 > - Better Marketplace
 > - Custom kill method for Hat reanimation aswell
 > - V1.0.9.3
-
--# Note this is completely unofficial to the original release

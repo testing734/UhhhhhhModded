@@ -806,7 +806,7 @@ else
 	}):Play()
 	local scrolltextratio = scrolltext.Size.X.Offset / scrolltext.Size.Y.Offset
 	local Triforce1 = Util.MakeTriforce(3, Color3.new(1, 0.3, 0.3), 4)
-	local Triforce2 = Util.MakeTriforce(3, Color3.new(1, 0.3, 0.3), 4)
+	local Triforce2 = Util.MakeTriforce(3, Color3.new(1, 0.15, 0.15), 4)
 	Triforce1.ZIndex = 2
 	Triforce2.ZIndex = 1
 	Triforce1.Parent = UIMainFrame

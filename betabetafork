@@ -9264,6 +9264,7 @@ local function ForceModuleReload(force)
 				pcall(function()
 					for _,s in listfiles(p) do
 						if isfolder(s) then
+							task.wait()
 							scan(s)
 						else
 							local e=s:match("%.[^%.]+$")

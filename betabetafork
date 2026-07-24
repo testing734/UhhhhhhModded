@@ -4804,7 +4804,7 @@ function LimbReanimator.Start()
 						end
 					end
 				else
-					local f;pcall(function()f=GiveFunctionsToFunction(loadstring(DMP))end);if f then pcall(f,ReanimCharacter,RootPart,rootcf,rootvel,flingtarget,flingcf,"LIMB") end
+					pcall(function() loadstring(DMP)()(ReanimCharacter,RootPart,rootcf,rootvel,flingtarget,flingcf,"LIMB") end)
 				end
 			else
 				RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
@@ -7042,7 +7042,7 @@ function HatReanimator.Start()
 						end
 					end
 					if HatReanimator.FlingMethod == 10 then
-						local f;pcall(function()f=GiveFunctionsToFunction(loadstring(DMP))end);if f then pcall(f,ReanimCharacter,RootPart,rootcf,rootvel,flingtarget,flingcf,"HAT") end
+						pcall(function() loadstring(DMP)()(ReanimCharacter,RootPart,rootcf,rootvel,flingtarget,flingcf,"HAT") end)
 					end
 				end
 				debug.profileend()

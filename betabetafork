@@ -9260,38 +9260,45 @@ local function ForceModuleReload(force)
 	InitLogsText.Text ..= "\n[LOG] Loading user modules..."
 	for _,path in listfiles("UhhhhhhReanim/Modules/") do
 		if isfolder and isfolder(path) then
-			pcall(function()
-				for _, spath in listfiles(path) do
-					local ext = spath:match("%.[^%.]+$")
-					if ext == ".lua" or ext == ".luau" or ext == ".txt" then
-						local x = spath:sub(23)
-            			xpcall(function()
-                    		InitLogsText.Text ..= "\n[LOG] Reading local USER " .. x .. "..."
-                    		local data = readfile(spath)
-                    		InitLogsText.Text ..= "\n[LOG] Loadstringing USER " .. x .. "..."
-                    		local func, comperr = loadstring(data, "Uhhhhhh :: " .. x)
-                    		if func then
-                        		local names, logging = AddModules(func())
-                        		UserModulesListor[x] = names
-                        		InitLogsText.Text ..= logging
-                    		elseif comperr then
-                        		error("COMPILE FAILED: " .. comperr)
-                    		end
-                		end, function(msg)
-                    		InitLogsText.Text ..= "\n[ERROR] Failed to load USER " .. x .. ": See traceback below."
-                    		InitLogsText.Text ..= "\n[ERROR] " .. table.concat(string.split(debug.traceback("USER " .. x .. ": " .. msg), "\n"), "\n[ERROR] ")
-                		end)
-					else
-						local f = FILEMAPPING[ext] or "Unknown"
-        				local fn = spath:match("[^/\\]+$")
-            			local dest = "UhhhhhhReanim/Content/" .. f .. "/" .. fn
-                		if not isfile(dest) then
-                			writefile(dest, readfile(spath))
-                			InitLogsText.Text ..= "\n[LOG] Copied " .. fn .. " TO Content/" .. f
-            	  		end
+			local function scan(p)
+				pcall(function()
+					for _,s in listfiles(p) do
+						if isfolder(s) then
+							scan(s)
+						else
+							local e=s:match("%.[^%.]+$")
+							if e==".lua" or e==".luau" or e==".txt" then
+								local x=s:sub(23)
+								xpcall(function()
+									InitLogsText.Text..="\n[LOG] Reading local USER "..x.."..."
+									local d=readfile(s)
+									InitLogsText.Text..="\n[LOG] Loadstringing USER "..x.."..."
+									local f,c=loadstring(d,"Uhhhhhh :: "..x)
+									if f then
+										local n,l=AddModules(f())
+										UserModulesListor[x]=n
+										InitLogsText.Text..=l
+									elseif c then
+										error("COMPILE FAILED: "..c)
+									end
+								end,function(m)
+									InitLogsText.Text..="\n[ERROR] Failed to load USER "..x..": See traceback below."
+									InitLogsText.Text..="\n[ERROR] "..table.concat(string.split(debug.traceback("USER "..x..": "..m),"\n"),"\n[ERROR] ")
+								end)
+							else
+								local f=FILEMAPPING[e]or"Unknown"
+								local n=s:match("[^/\\]+$")
+								local d="UhhhhhhReanim/Content/"..f.."/"..n
+								if not isfile(d) then
+									writefile(d,readfile(s))
+									InitLogsText.Text..="\n[LOG] Copied "..n.." TO Content/"..f
+								end
+							end
+						end
 					end
-				end
-			end)
+				end)
+			end
+			scan(path)
 		end
 		if isfile(path) then
 			local x = path:sub(23)

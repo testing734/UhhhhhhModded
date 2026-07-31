@@ -5019,6 +5019,7 @@ HatReanimator.HatCollideMethod = SaveData.Reanimator.HatsCollideMethod
 HatReanimator.IWantAllHats = SaveData.Reanimator.IWantAllHats
 HatReanimator.IWantHatCollide = SaveData.Reanimator.IWantHatCollide
 HatReanimator.Permadeath = false--not SaveData.Reanimator.HatsPatchmahub
+HatReanimator.PermadeathMethod = 1
 HatReanimator.RespawnPosition = SaveData.Reanimator.RespawnPosition
 -- 0 - hide body
 -- 1 - behind character
@@ -5105,10 +5106,17 @@ function HatReanimator.Fling(target, duration)
 end
 HatReanimator.DontFireCharAddOnThisChar = nil
 function HatReanimator.Config(parent)
-	UI.CreateText(parent, "permadeath is patched, enable this switch if you want to", 10, Enum.TextXAlignment.Center)
+	UI.CreateText(parent, "permadeath is patched, enable this switch if you want to, or change methods", 10, Enum.TextXAlignment.Center)
 	UI.CreateSwitch(parent, "Permadeath", HatReanimator.Permadeath).Changed:Connect(function(val)
 		HatReanimator.Permadeath = val
 		SaveData.Reanimator.HatsPatchmahub = not val
+	end)
+	UI.CreateDropdown(parent, "Permadeath Method", {
+		"Default (patched)",
+		"dolteddown's pd",
+	}, HatReanimator.PermadeathMethod).Changed:Connect(function(val)
+		HatReanimator.PermadeathMethod = val
+		--print(val)
 	end)
 	UI.CreateDropdown(parent, "respawntp", {
 		"The Void",
@@ -6507,7 +6515,7 @@ function HatReanimator.Start()
 		local cdsbtime = os.clock()
 		if perma then
 			--replicatesignal(Player.ConnectDiedSignalBackend)
-			HatReanimator.Status.Permadeath = "Fired CDSB Signal."
+			HatReanimator.Status.Permadeath = "hmm lets see."
 			cdsbeffect += Players.RespawnTime
 		end
 		HatReanimator.Status.RespawnFling = "Flinging targets..."
@@ -6650,9 +6658,19 @@ function HatReanimator.Start()
 		pcall(replicatesignal, Humanoid.ServerBreakJoints)
 		Humanoid.EvaluateStateMachine = true
 		Humanoid.BreakJointsOnDeath = true
-		Humanoid.Health = 0
-		Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-		Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+		if HatReanimator.PermadeathMethod == 2 then
+			--dolteddowns method!
+			pcall(replicatesignal, Humanoid.ServerBreakJoints)
+			Player.Character:BreakJoints()
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+			Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+			HatReanimator.Status.Permadeath = "Executed method 2."
+		else 
+			Humanoid.Health = 0
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+			Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+		end
 		readystate = 3
 		HatReanimator.Status.ReanimState = "Reanimate State: 3"
 		IsRespawning = false
@@ -8858,7 +8876,7 @@ UI.CreateText(CreditsPage, "isnt reanimation dead? oh hats.", 12, Enum.TextXAlig
 UI.CreateText(CreditsPage, "also ur like a fast bug hunter", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "<b>Awesome Awes955</b>", 14, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "u run out of ideas", 12, Enum.TextXAlignment.Center)
-UI.CreateText(CreditsPage, "but i dont, cuz u give me ideas", 12, Enum.TextXAlignment.Center)
+UI.CreateText(CreditsPage, "but i dont, cuz u give me ideas <-- im good at modding btw", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "<b>" .. (math.random() < 0.67 and "Tatsuki" or "Kaylie") .. "</b>", 14, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "u needed help, u paid it back well", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "somehow u got me in touch with MyWorld", 12, Enum.TextXAlignment.Center)

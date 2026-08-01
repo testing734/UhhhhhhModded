@@ -6659,7 +6659,7 @@ function HatReanimator.Start()
 		pcall(replicatesignal, Humanoid.ServerBreakJoints)
 		Humanoid.EvaluateStateMachine = true
 		Humanoid.BreakJointsOnDeath = true
-		if HatReanimator.PermadeathMethod == 2 then
+		if HatReanimator.PermadeathMethod == 2 and HatReanimator.Permadeath == true then
 			--dolteddowns method!
 			pcall(replicatesignal, Humanoid.ServerBreakJoints)
 			Player.Character:BreakJoints()

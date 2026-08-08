@@ -772,7 +772,6 @@ else
 		"wwwwwwwwwwwwwwwwwww                         grass                 ",
 		"erika's the towers                            sfoth iv update when",
 		"i will leak all ur script i will leak all ur script i will leak al",
-		--"##### loves gooning to everybody                  must've been the",
 		"fflags are dead lol                                               ",
 		"imagine being called a dummy                                      ",
 		-- DEAD MEME "nothing beats a jet 2 holiday. and right now, im beating myself to",
@@ -8885,7 +8884,6 @@ UI.CreateText(CreditsPage, "also ur like a fast bug hunter", 12, Enum.TextXAlign
 UI.CreateText(CreditsPage, "<b>Awesome Awes955</b>", 14, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "u run out of ideas", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "but i dont, cuz u give me ideas <-- im good at modding btw", 12, Enum.TextXAlignment.Center)
-UI.CreateText(CreditsPage, "<b>" .. (math.random() < 0.67 and "#######" or "######") .. "</b>", 14, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "u needed help, u paid it back well", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "somehow u got me in touch with MyWorld", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "<b>MyWorld</b>", 14, Enum.TextXAlignment.Center)
@@ -8956,7 +8954,7 @@ UI.CreateText(CreditsPage, "your tool fling is great reference!", 12, Enum.TextX
 UI.CreateSeparator(CreditsPage)
 UI.CreateText(CreditsPage, "<b>* Greetings to *</b>", 15, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "fev, inno, rqz, mry7zz, theo, redactedre, colon", 12, Enum.TextXAlignment.Center)
-UI.CreateText(CreditsPage, "terminal, guinwah, ##### (just a greet), hoster", 12, Enum.TextXAlignment.Center)
+UI.CreateText(CreditsPage, "terminal, guinwah, hoster", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "hamoun, baze, luacope, 2024, 2023 and 2022 me", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "scout, edge, shownape, index, blackhole/whitehole", 12, Enum.TextXAlignment.Center)
 UI.CreateText(CreditsPage, "zero from iwbtc for no reason, presidentanvil, mech/catlover", 12, Enum.TextXAlignment.Center)
@@ -8982,7 +8980,6 @@ do
 		"while i was in mwtp, someone said \"leak the hatdrop script\"",
 		"i was in fencing, then someone said \"its the genesis killer\"",
 		"STEVE, THE DANCING IMMORTALITY LORD!",
-		"\"kid im filipino\" - " .. (math.random() < 0.67 and "#######" or "######"),
 		"imagine getting ur script mogged by a script written and tested mostly on a mobile phone LOL",
 		"shownskid",
 		"this script mogs genesis", -- true-untrue though

@@ -4596,13 +4596,6 @@ function LimbReanimator.Config(parent)
 		LimbReanimator.UseCustomKill = val
 		SaveData.Reanimator.LimbUseCustomKill = val
 	end)
-	local PRRPtime = UI.CreateSlider(parent, "PRRP Fling duration", Reanimate.PhysicsRepRootPartFling, 0.001, 30, 0.001)
-	PRRPtime.Changed:Connect(function(val)
-		val = math.clamp(val, 0.0001, 30)
-		if val > 0 and val ~= nil and val < 40 then
-			Reanimate.PhysicsRepRootPartFling = val
-		end
-	end)
 	Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
 		dmode.Value = LimbReanimator.Mode + 1
 		dvel.Value = LimbReanimator.Velocity + 1
@@ -8145,6 +8138,13 @@ do
 	UI.CreateSwitch(MainPage, "Use Physics Glue", Reanimate.UsePhysicsRepRootPart).Changed:Connect(function(val)
 		Reanimate.UsePhysicsRepRootPart = val
 		SaveData.NoPhysicsRepRootPart = not val
+	end)
+	local PRRPtime = UI.CreateSlider(MainPage, "PRRP Max Fling duration", Reanimate.PhysicsRepRootPartFling, 0.001, 30, 0.001)
+	PRRPtime.Changed:Connect(function(val)
+		val = math.clamp(val, 0.0001, 30)
+		if val > 0 and val ~= nil and val < 40 then
+			Reanimate.PhysicsRepRootPartFling = val
+		end
 	end)
 	UI.CreateText(MainPage, "internals for physics based reanimation\n(like hat reanimator)", 10, Enum.TextXAlignment.Center)
 	UI.CreateSwitch(MainPage, "Patchma-like Netless", Reanimate.UsePatchmaLikeNetless).Changed:Connect(function(val)

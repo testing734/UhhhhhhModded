@@ -7,6 +7,7 @@
  - (Access to Uhhhhhh ENV given to Kill module) <-- removed due to not working properly and method awareness (BETABETA FORK)
  - Better Folder module loading (beta beta)
  - new Permadeath method  (beta beta) [ragdoll before method 2 happens]
+ - Added PRRP fling duration slider (beta beta) [maximum time given to a target]
 # Version 1.0.9.1 BETA modded (UNOFFICIAL)
  - No more lag on startup (Avast check disabled)
  - Added "Tool kill" which kills people using your tool like sword

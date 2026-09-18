@@ -471,7 +471,7 @@ do
 				end
 			end
 			if not pcall(function()
-				writefile(fil, game:HttpGet(meta.download_url))
+				writefile(fil, game:HttpGet(meta.download_url:gsub("^MARKET/", "https://raw.githubusercontent.com/STEVE-916-create/Uhhhhhh-Store/refs/heads/main/")))
 			end) then skipped += 1 end
 			downloaded += 1
 		end

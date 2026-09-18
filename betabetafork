@@ -471,8 +471,7 @@ do
 				end
 			end
 			if not pcall(function()
-				writefile(fil, game:HttpGet(meta.download_url:gsub("^MARKET/", "https://raw.githubusercontent.com/STEVE-916-create/Uhhhhhh-Store/refs/heads/main/")))
-			end) then skipped += 1 end
+				writefile(fil, game:HttpGet(meta.download_url))			end) then skipped += 1 end
 			downloaded += 1
 		end
 		local Downloading = Util.Instance("TextLabel", UIMainFrame)
@@ -7709,7 +7708,7 @@ local function AssetDownload(filename)
 		source = table.concat(split, "@")
 	end
 	if source:sub(1, 7) == "MARKET/" then
-		source = "https://raw.githubusercontent.com/STEVE-916-create/Uhhhhhh/main/community/" .. source:sub(8)
+		source = "https://raw.githubusercontent.com/STEVE-916-create/Uhhhhhh-Store/refs/heads/main/" .. source:sub(8)
 	end
 	local path = AssetGetPathFromFilename(filename)
 	return AssetDownloadAgent(source, filename, path)

@@ -7685,7 +7685,7 @@ local function AssetDownloadAgent(source, filename, path)
 		--Util.Notify("Downloading " .. filename .. "...")
 		local s, resp = pcall(request, {
 			Method = "GET",
-			Url = EnsureUrlEncode(source),
+			Url = source,
 		})
 		if s and resp and resp.StatusCode == 200 then
 			_Assetdownloadingcount -= 1

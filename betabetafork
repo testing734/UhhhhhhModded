@@ -400,6 +400,7 @@ do
 	pcall(makefolder, "UhhhhhhReanim/Modules")
 	pcall(makefolder, "UhhhhhhReanim/AdministrativeModules")
 	pcall(makefolder, "UhhhhhhReanim/AdministrativeModules/DamageMethod")
+	pcall(makefolder, "UhhhhhhReanim/AdministrativeModules/ReanimationMethod")
 	pcall(makefolder, "UhhhhhhReanim/Muzik")
 	pcall(makefolder, "UhhhhhhReanim/BuiltinModules")
 	pcall(makefolder, "UhhhhhhReanim/Content")
@@ -409,6 +410,415 @@ do
 	pcall(makefolder, "UhhhhhhReanim/Content/Models")
 	pcall(makefolder, "UhhhhhhReanim/Content/Unknown")
 end
+do
+	local folder = "UhhhhhhReanim/AdministrativeModules/ReanimationMethod"
+	local path = folder .. "/ragdoll.lua"
+	local ok, exists = pcall(isfile, path)
+	if ok and not exists then
+		pcall(writefile, path, [==[
+local ctx = ...
+local Player = ctx.Player
+local Reanimate = ctx.Reanimate
+local Util = ctx.Util
+local UI = ctx.UI
+local SaveData = ctx.SaveData
+local RunService = game:GetService("RunService")
+
+local DriveNames = {"HumanoidRootPart", "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+local DriveSet = {}
+for _, name in DriveNames do
+	DriveSet[name] = true
+end
+
+local RCDDisabled = false
+pcall(function()
+	local rcd = gethiddenproperty(workspace, "RejectCharacterDeletions")
+	if rcd.Name == "Disabled" then
+		RCDDisabled = true
+	end
+end)
+if SaveData.Reanimator.RagdollRCDless == nil then
+	SaveData.Reanimator.RagdollRCDless = RCDDisabled
+end
+
+local Ragdoll = {}
+Ragdoll.RCDless = not not SaveData.Reanimator.RagdollRCDless
+
+local Status = {}
+local Skipped = {}
+local Prepared = setmetatable({}, {__mode = "k"})
+local Ready = setmetatable({}, {__mode = "k"})
+local LastCF = setmetatable({}, {__mode = "k"})
+local LastNote = 0
+local LastShared = ""
+
+local function Note(text)
+	if os.clock() - LastNote > 3 then
+		LastNote = os.clock()
+		ctx.Notify(text)
+	end
+end
+
+local function JointOther(joint, part)
+	if joint.Part0 == part then
+		return joint.Part1
+	end
+	return joint.Part0
+end
+
+local function AssemblyGroups(body)
+	local groups = {}
+	for _, name in DriveNames do
+		local part = body:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			local root = part.AssemblyRootPart
+			if root then
+				if not groups[root] then
+					groups[root] = {}
+				end
+				table.insert(groups[root], part)
+			end
+		end
+	end
+	return groups
+end
+
+local function AllSeparate(body)
+	for _, list in AssemblyGroups(body) do
+		if #list > 1 then
+			return false
+		end
+	end
+	return true
+end
+
+local function HasAllParts(body)
+	for _, name in DriveNames do
+		if not body:FindFirstChild(name) then
+			return false
+		end
+	end
+	return true
+end
+
+local function DetachLimbs(body)
+	local broken = 0
+	for _, name in DriveNames do
+		local part = body:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			for _, j in part:GetJoints() do
+				if j:IsA("JointInstance") then
+					local other = JointOther(j, part)
+					if other and other ~= part and other.Parent == body and DriveSet[other.Name] then
+						if pcall(j.Destroy, j) then
+							broken += 1
+						end
+					end
+				end
+			end
+		end
+	end
+	for _, list in AssemblyGroups(body) do
+		if #list > 1 then
+			for i = 2, #list do
+				local part = list[i]
+				for _, j in part:GetJoints() do
+					if j:IsA("JointInstance") then
+						local other = JointOther(j, part)
+						if other and not DriveSet[other.Name] and #other:GetJoints() > 1 then
+							if pcall(j.Destroy, j) then
+								broken += 1
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return broken
+end
+
+local function CheckBody(body, detach)
+	local broken = 0
+	if detach then
+		broken = DetachLimbs(body)
+	end
+	local newStatus, newSkipped, shared = {}, {}, {}
+	for _, list in AssemblyGroups(body) do
+		for i, part in list do
+			local with = list[i == 1 and 2 or 1]
+			newStatus[part.Name] = {
+				Detached = #list == 1,
+				SharesWith = with and with.Name,
+				Owned = part.ReceiveAge == 0,
+			}
+			if i > 1 then
+				newSkipped[part] = true
+				table.insert(shared, part.Name)
+			end
+		end
+	end
+	Status = newStatus
+	Skipped = newSkipped
+	if broken > 0 then
+		ctx.Notify("Ragdoll: nuked " .. broken .. " connected joint(s)")
+	end
+	local key = table.concat(shared, ", ")
+	if key ~= LastShared then
+		LastShared = key
+		if key ~= "" then
+			Note("Ragdoll: " .. key .. " still shares an assembly (weld joints)")
+		end
+	end
+end
+
+local function Prepare(body)
+	if Prepared[body] then return end
+	Prepared[body] = true
+	task.spawn(function()
+		local deadline = os.clock() + 5
+		while body.Parent and not HasAllParts(body) and os.clock() < deadline do
+			task.wait()
+		end
+		if not body.Parent then return end
+		CheckBody(body, Ragdoll.RCDless)
+		local attached, notowned = 0, 0
+		for _, name in DriveNames do
+			local st = Status[name]
+			if st then
+				if not st.Detached then attached += 1 end
+				if not st.Owned then notowned += 1 end
+			end
+		end
+		ctx.Notify("Ragdoll: " .. attached .. " limb(s) connected, " .. notowned .. " not owned" .. (Ragdoll.RCDless and " (RCDLESS)" or ""))
+		Ready[body] = true
+	end)
+end
+
+local function ApplyLTM(body)
+	local ltm = Reanimate.LocalTransparencyModifier or 0
+	local function set(v)
+		local lltm = ltm
+		if Reanimate.FirstPersonBody then
+			lltm = 0
+			if v.Name == "Head" then
+				lltm = ltm
+			else
+				local lol = v:FindFirstChild("AccessoryWeld")
+				if lol and lol:IsA("Weld") and lol.Part1 and lol.Part1.Name == "Head" then
+					lltm = ltm
+				end
+			end
+		end
+		v.LocalTransparencyModifier = lltm
+	end
+	for _, v in body:GetChildren() do
+		if v:IsA("BasePart") then
+			set(v)
+		elseif v:IsA("Accessory") then
+			local h = v:FindFirstChild("Handle")
+			if h and h:IsA("BasePart") then
+				set(h)
+				h.CanCollide = false
+			end
+		end
+	end
+end
+
+local function DrivePart(part, targetCF, dt, t, visualOnly)
+	if part:IsGrounded() then return false end
+	local owned = part.ReceiveAge == 0
+	local st = Status[part.Name]
+	if st then
+		st.Owned = owned
+	end
+	if not owned then
+		LastCF[part] = nil
+		return false
+	end
+	part.CanCollide = false
+	if visualOnly then
+		part.CFrame = targetCF
+		return true
+	end
+	dt = math.max(dt, 1e-3)
+	local idle = Vector3.new(math.sin(t * 14), math.sin(t * 15 + 1.0472), math.sin(t * 16 + 2.0944)) * 0.001
+	local last = LastCF[part] or targetCF
+	local tvel = (targetCF.Position - last.Position) / dt
+	if tvel.Magnitude > 16384 then
+		tvel = tvel.Unit * 16384
+	end
+	if tvel.Magnitude < 0.12 then
+		targetCF += idle
+	end
+	local netless = Reanimate.NetlessVelocity + (math.sin(t * 0.5) + 1) / 2
+	local flat = Vector3.new(tvel.X, 0, tvel.Z)
+	if flat.Magnitude > netless then
+		flat = flat.Unit * netless
+	end
+	if Reanimate.UsePatchmaLikeNetless then
+		part.AssemblyLinearVelocity = Vector3.new(flat.X * 10, netless, flat.Z * 10)
+	else
+		part.AssemblyLinearVelocity = Vector3.new(flat.X, math.max(tvel.Y, netless), flat.Z)
+	end
+	part.CFrame = targetCF
+	if Reanimate.UseAngularVelocity then
+		local a, b = last:ToObjectSpace(targetCF):ToAxisAngle()
+		part.AssemblyAngularVelocity = (a * b) / dt + idle
+	else
+		part.AssemblyAngularVelocity = idle
+	end
+	LastCF[part] = targetCF
+	return true
+end
+
+local function DriveBody(body, fake, dt, t, visualOnly)
+	local okay = true
+	if not visualOnly then
+		ApplyLTM(body)
+	end
+	for _, name in DriveNames do
+		local part, target = body:FindFirstChild(name), fake:FindFirstChild(name)
+		if part and target and part:IsA("BasePart") and target:IsA("BasePart") then
+			if Skipped[part] then
+				okay = false
+			else
+				local st = Status[name]
+				if not (st and st.Detached) then
+					okay = false
+				end
+				if not DrivePart(part, target.CFrame, dt, t, visualOnly) then
+					okay = false
+				end
+			end
+		else
+			okay = false
+		end
+	end
+	return okay
+end
+
+local function StatusText()
+	local lines = {}
+	for _, name in DriveNames do
+		local st = Status[name]
+		if not st then
+			table.insert(lines, name .. ": missing")
+		else
+			local state = st.Detached and "loose" or ("ATTACHED (shares assembly with " .. tostring(st.SharesWith) .. ")")
+			table.insert(lines, name .. ": " .. state .. ", " .. (st.Owned and "owned" or "not owned"))
+		end
+	end
+	return table.concat(lines, "\n")
+end
+
+local function Config(parent)
+	UI.CreateText(parent, "Ragdoll reanimate yay now vibecode this somewhere to add fling", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(parent, "RCDLESS Mode", Ragdoll.RCDless).Changed:Connect(function(val)
+		Ragdoll.RCDless = val
+		SaveData.Reanimator.RagdollRCDless = val
+	end)
+	UI.CreateText(parent, "^ Reject Character Deletion is " .. (RCDDisabled and "DISABLED" or "not disabled"), 10, Enum.TextXAlignment.Center)
+	local statustext = UI.CreateText(parent, StatusText(), 12, Enum.TextXAlignment.Left)
+	local acc = 0
+	Util.LinkDestroyI2C(statustext, RunService.Heartbeat:Connect(function(dt)
+		acc += dt
+		if acc >= 0.25 then
+			acc = 0
+			statustext.Text = StatusText()
+		end
+	end))
+end
+
+local function ShowHitboxes()
+	local body = Player.Character
+	if not body then return end
+	for _, name in DriveNames do
+		local part = body:FindFirstChild(name)
+		if part then
+			pcall(Util.ShowPartHitbox, part)
+		end
+	end
+end
+
+local function Start()
+	local InitCFrame = nil
+	local char = Player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if hum and hum.RootPart then
+		InitCFrame = hum.RootPart.CFrame
+	end
+	Status, Skipped, LastShared = {}, {}, ""
+
+	local CharConn = Player.CharacterAdded:Connect(function()
+		local camcfr = workspace.CurrentCamera.CFrame
+		RunService.PreRender:Once(function()
+			RunService.PreAnimation:Wait()
+			workspace.CurrentCamera.CFrame = camcfr
+		end)
+	end)
+	ctx.OnStop(function() CharConn:Disconnect() end)
+
+	ctx.CreateCharacter(InitCFrame)
+	ctx.Ready()
+
+	local lastcheck = 0
+	while not ctx.IsStopping() do
+		local dt = RunService.PreSimulation:Wait()
+		workspace.FallenPartsDestroyHeight = 0/0
+		local t = os.clock()
+		local body = Player.Character
+		local fake = Reanimate.Character
+		if body then
+			Prepare(body)
+		end
+		if fake then
+			local RCHumanoid = fake:FindFirstChildOfClass("Humanoid")
+			local cam = workspace.CurrentCamera
+			if cam and RCHumanoid then
+				cam.CameraSubject = RCHumanoid
+			end
+			local okay = false
+			if body and Ready[body] then
+				if t - lastcheck > 0.5 then
+					lastcheck = t
+					CheckBody(body, false)
+				end
+				okay = DriveBody(body, fake, dt, t, false)
+			end
+			for _, v in fake:GetChildren() do
+				if v:IsA("BasePart") and table.find(LimbNames, v.Name) then
+					v.Transparency = okay and 1 or Reanimate.PlaceholderTransparency
+				end
+			end
+		end
+		RunService.PreRender:Wait()
+		if Reanimate:ShouldRotationType() then
+			Reanimate:CameraLockCharacter()
+		end
+		local body2, fake2 = Player.Character, Reanimate.Character
+		if body2 and fake2 and Ready[body2] then
+			DriveBody(body2, fake2, dt, os.clock(), true)
+		end
+	end
+
+	CharConn:Disconnect()
+	local h = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+	if h then
+		h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+		h:ChangeState(Enum.HumanoidStateType.Dead)
+	end
+end
+
+return "Ragdoll Reanimator (module)", Start, {
+	Config = Config,
+	ShowHitboxes = ShowHitboxes,
+}
+]==])
+	end
+end
+
 local SuC, DMP = pcall(function()
     return readfile("UhhhhhhReanim/AdministrativeModules/DamageMethod/main.lua")
 end)
@@ -7204,26 +7614,107 @@ _G_Uhhhhhh.Fling = function(part)
 	end
 end
 
+-- custom reanimation methods: UhhhhhhReanim/AdministrativeModules/ReanimationMethod/*.lua
+-- each file returns: name, function(ctx), optional {Config, Fling, ShowHitboxes}
+-- (the file itself is also given ctx as `...`, each one gets its own entry in the Reanimator dropdown)
+local CustomReanimators = {}
+do
+	local folder = "UhhhhhhReanim/AdministrativeModules/ReanimationMethod"
+	local files = {}
+	local ok, list = pcall(listfiles, folder)
+	if ok then
+		for _,path in list do
+			if not isfolder(path) and path:lower():match("%.lua$") then
+				table.insert(files, path)
+			end
+		end
+	end
+	table.sort(files)
+	local usednames = {}
+	for _,path in files do
+		local fname = path:match("([^/\\]+)$")
+		local cleanups = {}
+		local ctx = {
+			Player = Player,
+			Reanimate = Reanimate,
+			Util = Util,
+			UI = UI,
+			SaveData = SaveData,
+			Notify = Util.Notify,
+			Fling = ReanimateFling,
+			FallenPartsDestroyHeight = FallenPartsDestroyHeight,
+			DamageMethod = DMP,
+			CreateCharacter = function(cf) return Reanimate.CreateCharacter(cf) end,
+			Ready = function() Reanimate.Starting = false end,
+			IsStopping = function() return Reanimate.Stopping end,
+			OnStop = function(fn) table.insert(cleanups, fn) end,
+			GetCharacter = function()
+				local c = Player.Character
+				local h = c and c:FindFirstChildOfClass("Humanoid")
+				return c, h, h and h.RootPart
+			end,
+		}
+		local ok, name, method, extras = pcall(function()
+			local func, err = loadstring(readfile(path), "Uhhhhhh :: CustomReanimationMethod :: " .. fname)
+			assert(func, err)
+			return func(ctx)
+		end)
+		if not ok then
+			Util.Notify(fname .. " failed to load: " .. tostring(name))
+		elseif type(name) ~= "string" or type(method) ~= "function" then
+			Util.Notify(fname .. " must return a name and a function")
+		else
+			if type(extras) ~= "table" then extras = {} end
+			if usednames[name] then name = name .. " (" .. fname .. ")" end
+			usednames[name] = true
+			local Reanimator = {Name = name, File = fname, Fling = extras.Fling, ShowHitboxes = extras.ShowHitboxes}
+			function Reanimator.Config(parent)
+				if extras.Config then
+					extras.Config(parent)
+				else
+					UI.CreateText(parent, "Custom method from " .. fname, 12, Enum.TextXAlignment.Left)
+				end
+			end
+			function Reanimator.Start()
+				table.clear(cleanups)
+				local ok, err = pcall(method, ctx)
+				if not ok then
+					Util.Notify(name .. " errored: " .. tostring(err))
+				end
+				Reanimate.Starting = false
+				while not Reanimate.Stopping do
+					RunService.PreSimulation:Wait()
+				end
+				for _,fn in cleanups do pcall(fn) end
+				Reanimate.Stopping = false
+				Reanimate.DestroyCharacter()
+			end
+			table.insert(CustomReanimators, Reanimator)
+		end
+	end
+end
+
 do
 	SaveData.SelectedReanimator = SaveData.SelectedReanimator or 1
-	local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator"}, SaveData.SelectedReanimator)
-	local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ Limb Reanimator Config +=-", 15, Enum.TextXAlignment.Center)
-	local SelectedReanimator = LimbReanimator
-	if SaveData.SelectedReanimator == 2 then
-		SelectedReanimator = HatReanimator
-		ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
+	local ReanimatorList = {LimbReanimator, HatReanimator}
+	local ReanimatorNames = {"Limb Reanimator", "Hats Reanimator"}
+	for _,r in CustomReanimators do
+		table.insert(ReanimatorList, r)
+		table.insert(ReanimatorNames, r.Name)
 	end
+	if SaveData.SelectedReanimatorName then
+		SaveData.SelectedReanimator = table.find(ReanimatorNames, SaveData.SelectedReanimatorName) or SaveData.SelectedReanimator
+	end
+	SaveData.SelectedReanimator = math.clamp(SaveData.SelectedReanimator, 1, #ReanimatorList)
+	local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", ReanimatorNames, SaveData.SelectedReanimator)
+	local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ " .. ReanimatorNames[SaveData.SelectedReanimator] .. " Config +=-", 15, Enum.TextXAlignment.Center)
+	local SelectedReanimator = ReanimatorList[SaveData.SelectedReanimator]
 	local ReanimatorConfigCanvas = UI.CreateCanvas(MainPage)
 	ReanimateMethodSelect.Changed:Connect(function(value)
 		SaveData.SelectedReanimator = value
-		if value == 1 then
-			SelectedReanimator = LimbReanimator
-			ReanimatorConfigTitle.Text = "-=+ Limb Reanimator Config +=-"
-		end
-		if value == 2 then
-			SelectedReanimator = HatReanimator
-			ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
-		end
+		SaveData.SelectedReanimatorName = ReanimatorNames[value]
+		SelectedReanimator = ReanimatorList[value]
+		ReanimatorConfigTitle.Text = "-=+ " .. ReanimatorNames[value] .. " Config +=-"
 		Util.ClearAllChildrenGui(ReanimatorConfigCanvas)
 		SelectedReanimator.Config(ReanimatorConfigCanvas)
 	end)
